@@ -1,6 +1,6 @@
 # Salmonella-Capstone
 This code is part of my senior capstone research project in which I attempt to detect pathogenicity using bioinformatic methods. 
-The code in this repository is incomplete, it just to show the genreal process and logic I used to test my hypotheses. 
+The code in this repository is just a snapshot of the work I did, it shows the genreal process and logic I used to test my hypotheses. 
 
 Using the NCBI pathogen detection database, I was able to obtain five complete Salmonella Enterica genome assemblies. 
 Of the five genomes, two were clinical isolates,two were environmental isolates, and one was a reference genome. 
