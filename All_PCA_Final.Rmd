@@ -1,0 +1,311 @@
+---
+title: "All PCA"
+author: "Kyle Sullivan"
+date: "4/16/2021"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(reshape2)
+library(factoextra)
+library(FactoMineR)
+library(adegenet)
+```
+make the total dataframe for ORF PCA
+```{r}
+total_pca_dataframe_ORF <- codon_frequency_table
+```
+Add the starting locations for each of the open reading frames
+```{r}
+SEE_starts = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SEE Genes/SEE_starts.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+SR_starts = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SR Genes/SR_starts.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+STC_starts = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/STC Genes/STC_starts.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+STE_starts = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/STE Genes/STE_starts.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+SEC_starts = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SEC Genes/SEC_starts.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+locations <- c(SEE_starts, SR_starts, STC_starts, STE_starts, SEC_starts)
+
+total_pca_dataframe_ORF$Location <- locations
+```
+Distiguish whether or not the open reading frame is located in a pathogenicity island
+```{r}
+total_pca_dataframe_ORF <- total_pca_dataframe_ORF %>% mutate(is_it_SPI1 = 
+                                case_when(total_pca_dataframe_ORF$Location>=3005787 & total_pca_dataframe_ORF$Location<=3050270 ~ "SPI1",
+                                          total_pca_dataframe_ORF$Location>=1461452 & total_pca_dataframe_ORF$Location<=1501953 ~ "SPI2",
+                                          total_pca_dataframe_ORF$Location<3005787 & total_pca_dataframe_ORF$Location>1501953~ "other",
+                                          total_pca_dataframe_ORF$Location > 3050270 ~ "other",
+                                          total_pca_dataframe_ORF$Location < 1461452 ~ "other"))
+```
+Read in all of the GC contents for each open reading frame 
+```{r}
+SEE_GC = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SEE_GC_content.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+SR_GC = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SR_GC_content.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+STC_GC = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/STC_GC_content.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+STE_GC = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/STE_GC_content.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+SEC_GC = read.delim("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SEC_GC_content.txt", header = FALSE, sep= ",", check.names = FALSE) 
+
+GC_contents = c(SEE_GC,SR_GC,STC_GC,STE_GC,SEC_GC)
+
+total_pca_dataframe_ORF$GC_content = GC_contents
+```
+Add strain labels to each open reading frame
+```{r}
+SEE <- rep('SEE', each = 3832)
+SR <- rep('SR', each = 3949)
+STC <- rep('STC', each = 3992)
+STE <- rep('STE', each = 4079)
+SEC <- rep('SEC', each = 4051)
+
+strains <- c(SEE, SR, STC, STE, SEC)
+
+total_pca_dataframe_ORF$Strain <- strains
+```
+
+Create the PCA, excluding the columns with the extra information 
+```{r}
+final_orf_PCA <- total_pca_dataframe_ORF[, -c(65:68)] %>% PCA(graph = FALSE)
+```
+Summary statistics for the PCA 
+```{r}
+fviz_eig(final_orf_PCA)
+get_eigenvalue(final_orf_PCA)
+get_pca(final_orf_PCA)
+```
+black dots pca by orf
+```{r}
+pdf("ORF_PCA.pdf", width = 9, height = 6)
+
+fviz_pca_ind(final_orf_PCA, geom = "point", title = 'All Open Reading Frames, Components 1 and 2')
+
+final_orf_PCA %>% fviz_pca_ind(c(1,3),geom = "point",  title = 'All Open Reading Frames, Components 1 and 3')
+
+final_orf_PCA %>% fviz_pca_ind(c(2,3),geom = "point",  title = 'All Open Reading Frames, Components 2 and 3')
+
+final_orf_PCA %>% fviz_screeplot()
+  
+dev.off()
+```
+PCA for Salmonella serovar Enteritidis, clinical isolate
+```{r}
+pdf("ORF_SEC_PCA.pdf", width = 9, height = 6)
+
+SEC_pca <- total_pca_dataframe_ORF[c(15854:19903), -c(65:68)] %>% PCA(graph = FALSE)
+
+fviz_pca_ind(SEC_pca,
+             geom.ind = "point",
+             col.ind = '#E74C3C',
+             pointshape = 19,
+             title = 'All Open Reading Frames for SEC, Components 1 and 2'
+             )
+dev.off()
+```
+
+PCA for Salmonella serovar Enteritidis, environmental isolate
+```{r}
+pdf("ORF_SEE_PCA.pdf", width = 9, height = 6)
+
+SEE_pca <- total_pca_dataframe_ORF[c(1:3832), -c(65:68)] %>% PCA(graph = FALSE)
+
+fviz_pca_ind(SEE_pca,
+             geom.ind = "point",
+             col.ind = '#F39C12',
+             pointshape = 19,
+             title = 'All Open Reading Frames for SEE, Components 1 and 2'
+             )
+dev.off()
+```
+
+PCA for Salmonella Reference genome
+```{r}
+pdf("ORF_SR_PCA.pdf", width = 9, height = 6)
+
+SR_pca <- total_pca_dataframe_ORF[c(3833:7781), -c(65:68)] %>% PCA(graph = FALSE)
+
+fviz_pca_ind(SR_pca,
+             geom.ind = "point",
+             col.ind = '#3498DB',
+             pointshape = 19,
+             title = 'All Open Reading Frames for SR , Components 1 and 2'
+             )
+dev.off()
+```
+
+PCA for Salmonella serovar Typhimurium, clinical isolate
+```{r}
+pdf("ORF_STC_PCA.pdf", width = 9, height = 6)
+
+STC_pca <- total_pca_dataframe_ORF[c(7782:11774), -c(65:68)] %>% PCA(graph = FALSE)
+
+fviz_pca_ind(STC_pca,
+             geom.ind = "point",
+             col.ind = '#0DB615',
+             pointshape = 19,
+             title = 'All Open Reading Frames for STC, Components 1 and 2'
+             )
+dev.off()
+```
+
+PCA for Salmonella serovar Typhimurium, environmental isolate
+```{r}
+pdf("ORF_STE_PCA.pdf", width = 9, height = 6)
+
+STE_pca <- total_pca_dataframe_ORF[c(11775:15854), -c(65:68)] %>% PCA(graph = FALSE)
+
+fviz_pca_ind(STE_pca,
+             geom.ind = "point",
+             col.ind = '#8E44AD',
+             pointshape = 19,
+             title = 'All Open Reading Frames for STE, Components 1 and 2'
+             )
+dev.off()
+```
+
+Color code all open reading frames by strain
+```{r}
+pdf("ORF_by_Strain_PCA.pdf", width = 9, height = 6)
+
+total_pca_dataframe_ORF$Strain <- unlist(total_pca_dataframe_ORF$Strain)
+
+fviz_pca_ind(final_orf_PCA,
+             geom.ind = "point",
+             col.ind = total_pca_dataframe_ORF$Strain,
+             palette = c('#E74C3C', '#F39C12', '#3498DB', '#2ECC71', '#8E44AD'),
+             legend.title = 'Strains',
+             pointshape = 19,
+             title = 'All Open Reading Frames by Strain, Components 1 and 2'
+             )
+final_orf_PCA %>% fviz_pca_ind(c(1,3),
+             geom.ind = "point",
+             col.ind = total_pca_dataframe_ORF$Strain,
+             palette = c('#E74C3C', '#F39C12', '#3498DB', '#2ECC71', '#8E44AD'),
+             legend.title = 'Strains',
+             pointshape = 19,
+             title = 'All Open Reading Frames by Strain, Components 1 and 3'
+             )
+
+final_orf_PCA %>% fviz_pca_ind(c(2,3),
+             geom.ind = "point",
+             col.ind = total_pca_dataframe_ORF$Strain,
+             palette = c('#E74C3C', '#F39C12', '#3498DB', '#2ECC71', '#8E44AD'),
+             legend.title = 'Strains',
+             pointshape = 19,
+             title = 'All Open Reading Frames by Strain, Components 2 and 3'
+             )
+final_orf_PCA %>% fviz_screeplot()
+
+dev.off()
+```
+
+Color code all open reading frames by location
+```{r}
+pdf("ORF_by_Location_PCA.pdf", width = 9, height = 6)
+
+fviz_pca_ind(final_orf_PCA,
+             geom = "point",
+             col.ind = total_pca_dataframe_ORF$Location,
+             gradient.cols = c("#8B66FE", "#669BFE", "#5BFFC8", "#66FE8B", "#5BFFC8", "#669BFE", "#8B66FE"),
+             legend.title = 'Location', 
+             title = 'Location on Genome, Components 1 and 2'
+             )
+final_orf_PCA %>% fviz_pca_ind(c(1,3),geom = "point",
+             col.ind = total_pca_dataframe_ORF$Location,
+             gradient.cols = c("#8B66FE", "#669BFE", "#5BFFC8", "#66FE8B", "#5BFFC8", "#669BFE", "#8B66FE"),
+             legend.title = 'Location',
+             title = 'Location on Genome, Components 1 and 3'
+             )
+
+final_orf_PCA %>% fviz_pca_ind(c(2,3),geom = "point",
+             col.ind = total_pca_dataframe_ORF$Location,
+             gradient.cols = c("#8B66FE", "#669BFE", "#5BFFC8", "#66FE8B", "#5BFFC8", "#669BFE", "#8B66FE"),
+             legend.title = 'Location',
+             title = 'Location on Genome, Components 2 and 3'
+             )
+
+final_orf_PCA %>% fviz_screeplot()
+
+dev.off()
+```
+
+Color code all open reading frames for whether they are in a pathogenicity island
+```{r}
+pdf("ORF_by_SPI_PCA.pdf", width = 9, height = 6)
+
+fviz_pca_ind(final_orf_PCA,
+             geom = "point",
+             col.ind = total_pca_dataframe_ORF$SPI,
+             palette = c("#D5D4D4", "#FF0000", '#023BFE'),
+             legend.title = 'Pathogenicity Island',
+             pointshape = 19,
+             alpha.ind = 0.5,
+             title = 'Pathogenicity Islands One and Two, Components 1 and 2'
+             )
+
+final_orf_PCA %>% fviz_pca_ind(c(1,3),geom = "point",
+             col.ind = total_pca_dataframe_ORF$SPI,
+             palette = c("#D5D4D4", "#FF0000", '#023BFE'),
+             legend.title = 'Pathogenicity Island',
+             pointshape = 19,
+             alpha.ind = 0.5,
+             title = 'Pathogenicity Islands One and Two, Components 1 and 3')
+
+final_orf_PCA %>% fviz_pca_ind(c(2,3),geom = "point",
+             col.ind = total_pca_dataframe_ORF$SPI,
+             palette = c("#D5D4D4", "#FF0000", '#023BFE'),
+             legend.title = 'Pathogenicity Island',
+             pointshape = 19,
+             alpha.ind = 0.5,
+             title = 'Pathogenicity Islands One and Two, Components 2 and 3')
+
+final_orf_PCA %>% fviz_screeplot()
+
+dev.off()
+```
+
+Color code all open reading frames by GC content
+```{r}
+pdf("ORF_GC_Content_PCA.pdf", width = 9, height = 6)
+
+fviz_pca_ind(final_orf_PCA,
+             geom = "point",
+             col.ind = total_pca_dataframe_ORF$GC_content,
+             gradient.cols = c("#8695FF", "#E0B3FF", "#FD5D5D"),
+             legend.title = 'GC Content',
+             title = 'GC Content, Component 1 and 2' 
+             )
+final_orf_PCA %>% fviz_pca_ind(c(1,3),geom = "point",
+             col.ind = total_pca_dataframe_ORF$GC_content,
+             gradient.cols = c("#8695FF", "#E0B3FF", "#FD5D5D"),
+             legend.title = 'GC Content',
+             title = 'GC Content, Component 1 and 3'
+             )
+
+final_orf_PCA %>% fviz_pca_ind(c(2,3),geom = "point",
+             col.ind = total_pca_dataframe_ORF$GC_content,
+             gradient.cols = c("#8695FF", "#E0B3FF", "#FD5D5D"),
+             legend.title = 'GC Content',
+             title = 'GC Content, Component 2 and 3'
+             )
+
+final_orf_PCA %>% fviz_screeplot()
+
+dev.off()
+```
+
+
+
+
+
+
+
+
+
