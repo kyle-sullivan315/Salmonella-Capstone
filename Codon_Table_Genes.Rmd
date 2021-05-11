@@ -1,0 +1,88 @@
+---
+title: "Codon_Usage"
+author: "Kyle Sullivan"
+date: "4/29/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(reshape2)
+library(factoextra)
+library(FactoMineR)
+library(coRdon)
+```
+
+```{r}
+#begin with isolate_one
+
+#read in the first open reading frame
+SEEgene1 <- readSet(file = "~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SEE genes/SEE_1.fa")
+
+SEEgene1_table <- codonTable(SEEgene1)
+
+SEEgene1_counts <- as.data.frame(codonCounts(SEEgene1_table))
+
+#flip the table 
+SEEgene1_counts <- SEEgene1_counts %>% t() %>% as.data.frame()
+
+#sum up the total number of codons across all sequences in the fasta
+SEEgene1_counts$totals = rowSums(SEEgene1_counts)
+
+#convert the total number of codons into codon frequencies
+SEEgene1_counts$frequencies=SEEgene1_counts$totals/sum(SEEgene1_counts$totals)
+
+#drop all of the columns except the one with the codon frequencies
+codon_frequency_table <- as.data.frame(SEEgene1_counts[,-c(1:ncol(SEEgene1_counts)-1)], row.names = row.names(SEEgene1_counts))
+
+#move the codon labels from row names to being an actual column
+codon_frequency_table <- codon_frequency_table %>% mutate(Codon=row.names(codon_frequency_table)) 
+
+#rename the frequencies column to the first isolate's first open reading frame
+codon_frequency_table <- codon_frequency_table %>% mutate(species_one_=codon_frequency_table$`SEEgene1_counts[, -c(1:39681)]`)
+
+#get rid of the column with the old clunky names
+colnames(codon_frequency_table)<- c("SEEgene1", "codon")
+```
+
+```{r}
+#read in the rest of the files and attach them to the first one with the left join command with a for loop
+
+for (gene in c(1:4051)) #this is updated for each isolate to match the number of open reading frames it has
+{
+  #same process as above until you reach the left_join
+  
+   codon_data <- readSet(file=paste("~/Documents/University of Maryland/IVSP/Capstone/Genomic Data/Genomes/cds files/SEC Genes/SEC_", gene, ".fa", sep=""))
+
+codon_table <- codonTable(codon_data)
+
+codon_counts <- as.data.frame(codonCounts(codon_table))
+
+codon_counts <- codon_counts %>% t() %>% as.data.frame()
+
+codon_counts$totals = rowSums(codon_counts)
+
+codon_counts$frequencies=codon_counts$totals/sum(codon_counts$totals)
+
+codon_proportions <- as.data.frame(codon_counts[,-c(1:ncol(codon_counts)-1)], row.names = row.names(codon_counts))
+
+colnames(codon_proportions) <- paste("SEC", gene, sep="")
+
+codon_proportions <- codon_proportions %>% mutate(codon=row.names(codon_proportions))
+
+#join the current species (represented by codon_proportions) to the original codon_frequency_table
+codon_frequency_table <- left_join(codon_frequency_table, codon_proportions, by="codon")
+}
+
+```
+
+```{r}
+codon_frequency_table <- column_to_rownames(codon_frequency_table, var = "codon")
+```
+
+```{r}
+#write the codon frequency table for future use
+write.table(codon_frequency_table, file="Gene.codon.frequencies.txt", quote = FALSE, col.names = TRUE, row.names = FALSE)
+```
+
+

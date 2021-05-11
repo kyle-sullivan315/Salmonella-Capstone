@@ -1,0 +1,181 @@
+---
+title: "Codon_Usage"
+author: "David Ferranti"
+date: "12/30/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(reshape2)
+library(factoextra)
+library(FactoMineR)
+
+
+citation("tidyverse")
+citation("reshape2")
+citation("factoextra")
+citation("FactoMineR")
+citation("coRdon")
+```
+
+```{r}
+genome_wide_contrib <- all_codon[,-c(7:10)]
+
+rownames(genome_wide_contrib) <- genome_wide_contrib$Codon
+
+genome_wide_contrib <- genome_wide_contrib[,-2]
+
+colnames(genome_wide_contrib) <- c('SEE', 'SR', 'STC', 'STE', 'SEC')
+```
+
+```{r}
+pdf("Codon_Contributions_for_genome_pca.pdf", width = 15, height = 10)
+
+#Extract the part of the PCA object that deals with this
+contributions <- as.data.frame(genome_wide_contrib)
+
+#fix row names
+contributions <- contributions %>% mutate(codons=row.names(contributions))
+
+#create a column for the corresponding amino acid
+contributions <- contributions %>% mutate(corresponding_amino_acid="Unknown")
+
+#for loop that fills in the amino acid row--could also probably be done with ifelse()
+#I believe all these should be right but if a codon matches the wrong amino acid let me know
+for (i in 1:nrow(contributions))
+{
+  if (contributions$codons[i]=="AAA" || contributions$codons[i]=="AAG") #aaa aag
+  {
+    contributions$corresponding_amino_acid[i]="K"
+  }
+  
+    if (contributions$codons[i]=="AAC" || contributions$codons[i]=="AAT") #aac aat
+  {
+    contributions$corresponding_amino_acid[i]="N"
+  }
+  
+      if (contributions$codons[i]=="ACA" || contributions$codons[i]=="ACC" || contributions$codons[i]=="ACG" || contributions$codons[i]=="ACT")  #aca acc acg act
+  {
+    contributions$corresponding_amino_acid[i]="T"
+      }
+  
+        if (contributions$codons[i]=="AGA" ||  contributions$codons[i]=="AGG" ) #aga agg
+  {
+    contributions$corresponding_amino_acid[i]="R"
+        }
+  
+  if (contributions$codons[i]=="AGC" || contributions$codons[i]=="AGT") #agc agt
+  {
+    contributions$corresponding_amino_acid[i]="S"
+  }
+  
+  if (contributions$codons[i]=="ATC" || contributions$codons[i]=="ATT" || contributions$codons[i]=="ATA") #atc att ata
+  {
+    contributions$corresponding_amino_acid[i]="I"
+        }
+  
+  if ( contributions$codons[i]=="ATG") #atg
+  {
+    contributions$corresponding_amino_acid[i]="M"
+  }
+  
+    if (contributions$codons[i]=="CAA" || contributions$codons[i]=="CAG") #caa cag
+  {
+    contributions$corresponding_amino_acid[i]="Q"
+  }
+  
+    if (contributions$codons[i]=="CAC" || contributions$codons[i]=="CAT") #cac cat
+  {
+    contributions$corresponding_amino_acid[i]="H"
+  }
+  
+      if (contributions$codons[i]=="CCA" || contributions$codons[i]=="CCG" || contributions$codons[i]=="CCC" || contributions$codons[i]=="CCT") #cca ccg ccc cct
+  {
+    contributions$corresponding_amino_acid[i]="P"
+  }
+  
+    if (contributions$codons[i]=="CGA" || contributions$codons[i]=="CGG" || contributions$codons[i]=="CGC" || contributions$codons[i]=="CGT") #cga cgg cgc cgt
+  {
+    contributions$corresponding_amino_acid[i]="R"
+    }
+  
+     if (contributions$codons[i]=="CTA" || contributions$codons[i]=="CTG" || contributions$codons[i]=="CTC" || contributions$codons[i]=="CTT") #cta ctg ctc ctt
+  {
+    contributions$corresponding_amino_acid[i]="L"
+     }
+  
+      if (contributions$codons[i]=="GAA" || contributions$codons[i]=="GAG") #gaa gag
+  {
+    contributions$corresponding_amino_acid[i]="E"
+  }
+  
+    if (contributions$codons[i]=="GAC" || contributions$codons[i]=="GAT") #gac gat
+  {
+    contributions$corresponding_amino_acid[i]="D"
+  }
+  
+      if (contributions$codons[i]=="GCA" || contributions$codons[i]=="GCG" || contributions$codons[i]=="GCC" || contributions$codons[i]=="GCT") #gca gcg gcc gct
+  {
+    contributions$corresponding_amino_acid[i]="A"
+  }
+  
+    if (contributions$codons[i]=="GGA" || contributions$codons[i]=="GGG" || contributions$codons[i]=="GGC" || contributions$codons[i]=="GGT") #gga ggg ggc ggt
+  {
+    contributions$corresponding_amino_acid[i]="G"
+    }
+  
+     if (contributions$codons[i]=="GTA" || contributions$codons[i]=="GTG" || contributions$codons[i]=="GTC" || contributions$codons[i]=="GTT") #gta gtg gtc
+  {
+    contributions$corresponding_amino_acid[i]="V"
+     }
+  
+        if (contributions$codons[i]=="TAA" || contributions$codons[i]=="TAG") #taa tag
+  {
+    contributions$corresponding_amino_acid[i]="Stop"
+  }
+  
+    if (contributions$codons[i]=="TAC" || contributions$codons[i]=="TAT") #tac tat
+  {
+    contributions$corresponding_amino_acid[i]="Y"
+  }
+  
+      if (contributions$codons[i]=="TCA" || contributions$codons[i]=="TCG" || contributions$codons[i]=="TCC" || contributions$codons[i]=="TCT") #tca tcg tcc tct
+  {
+    contributions$corresponding_amino_acid[i]="S"
+  }
+  
+    if (contributions$codons[i]=="TGA") #tga
+  {
+    contributions$corresponding_amino_acid[i]="Stop"
+    }
+  if ( contributions$codons[i]=="TGG") #tgg
+  {
+    contributions$corresponding_amino_acid[i]="W"
+    }
+ 
+   if (  contributions$codons[i]=="TGC" || contributions$codons[i]=="TGT" ) #tgc tgt
+  {
+    contributions$corresponding_amino_acid[i]="C"
+    }
+
+     if (contributions$codons[i]=="TTA" || contributions$codons[i]=="TTG" ) #tta ttg
+  {
+    contributions$corresponding_amino_acid[i]="L"
+     }
+  if (contributions$codons[i]=="TTC" || contributions$codons[i]=="TTT") # ttc ttt
+  {
+    contributions$corresponding_amino_acid[i]="F"
+     }
+  
+}
+
+#reshape the data so it is easier to look at with ggplot
+melted_contribution <- contributions %>% melt(id.vars=c("codons", "corresponding_amino_acid"))
+
+#make a graph of the contribution of each codon to each dimension of the PCA 
+melted_contribution %>% ggplot(aes(x=variable, y=value, fill=corresponding_amino_acid))+geom_col(position="dodge")+facet_wrap(~corresponding_amino_acid*codons)
+dev.off()
+```
+
+
