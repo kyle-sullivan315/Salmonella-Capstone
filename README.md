@@ -10,4 +10,7 @@ I ran a principal component analysis on all of the 19,000 open reading frames an
 I ended up finding a bimodal distribution of open reading frames in the PCA and spent the rest of the time trying to explain that distribution. 
 I discovered that there did not appear to be any difference between the genomes, leading me to conclude that the cause of the bimodal distribution must be within the genomes.
 I went on to examine the relationship between the PCA and location of the open reading frames, whether or not the open reading frames are part of a Salmonella Pathogenicty Island (SPI), and the GC content of the open reading frame. 
+I used the getStartsSEE Python script to get the starting location of every open reading frame from each of their files and save it in a CSV file.
+I used the GC_count Python script to calculate the GC content of every open reading frame and saved the values to CSV file. 
+The two CSV files were added to my data frame in R and used in my subsequent analyses of the open reading frames. 
 Ultimately, I wasn't able to find an explaination for the bimodal distribution of codon usage in the PCA, but I was able to disprove mulitple hypotheses and get some potential future directions. 
